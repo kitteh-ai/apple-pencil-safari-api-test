@@ -19,27 +19,7 @@ const requestIdleCallback = window.requestIdleCallback || function (fn) { setTim
  * @return {void}
  */
 function drawOnCanvas (stroke) {
-  context.strokeStyle = 'black'
-  context.lineCap = 'round'
-  context.lineJoin = 'round'
 
-  const l = stroke.length - 1
-  if (stroke.length >= 3) {
-    const xc = (stroke[l].x + stroke[l - 1].x) / 2
-    const yc = (stroke[l].y + stroke[l - 1].y) / 2
-    context.lineWidth = stroke[l - 1].lineWidth
-    context.quadraticCurveTo(stroke[l - 1].x, stroke[l - 1].y, xc, yc)
-    context.stroke()
-    context.beginPath()
-    context.moveTo(xc, yc)
-  } else {
-    const point = stroke[l];
-    context.lineWidth = point.lineWidth
-    context.strokeStyle = point.color
-    context.beginPath()
-    context.moveTo(point.x, point.y)
-    context.stroke()
-  }
 }
 
 /**
@@ -89,6 +69,16 @@ for (const ev of ["touchstart", "mousedown"]) {
   })
 }
 
+window.numPoints = 0
+window.pps = []
+setInterval(function () {
+  const _numPoints = window.numPoints
+  window.numPoints = 0
+    pps.push(_numPoints)
+        $touches.innerHTML = `
+          pps = ${_numPoints}
+        `
+}, 1000)
 for (const ev of ['touchmove', 'mousemove']) {
   canvas.addEventListener(ev, function (e) {
     if (!isMousedown) return
@@ -110,25 +100,9 @@ for (const ev of ['touchmove', 'mousemove']) {
 
     // smoothen line width
     lineWidth = (Math.log(pressure + 1) * 40 * 0.2 + lineWidth * 0.8)
-    points.push({ x, y, lineWidth })
+    
 
-    drawOnCanvas(points);
-
-    requestIdleCallback(() => {
-      $force.textContent = 'force = ' + pressure
-
-      const touch = e.touches ? e.touches[0] : null
-      if (touch) {
-        $touches.innerHTML = `
-          touchType = ${touch.touchType} ${touch.touchType === 'direct' ? '👆' : '✍️'} <br/>
-          radiusX = ${touch.radiusX} <br/>
-          radiusY = ${touch.radiusY} <br/>
-          rotationAngle = ${touch.rotationAngle} <br/>
-          altitudeAngle = ${touch.altitudeAngle} <br/>
-          azimuthAngle = ${touch.azimuthAngle} <br/>
-        `
-      }
-    })
+    window.numPoints++
   })
 }
 
@@ -150,8 +124,6 @@ for (const ev of ['touchend', 'touchleave', 'mouseup']) {
     }
 
     isMousedown = false
-
-    requestIdleCallback(function () { strokeHistory.push([...points]); points = []})
 
     lineWidth = 0
   })
